@@ -294,6 +294,65 @@
       width: 100%;
     }
 
+    /* Editor de premios */
+    .reward-editor {
+      margin-top: 0.5rem;
+      padding-top: 0.5rem;
+      border-top: 1px dashed #e5e7eb;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .reward-editor-header {
+      font-size: 0.78rem;
+      color: #6b7280;
+    }
+
+    .reward-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      align-items: center;
+      font-size: 0.8rem;
+    }
+
+    .reward-row input {
+      padding: 0.2rem 0.35rem;
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+      font-size: 0.8rem;
+    }
+
+    .reward-row input:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
+    }
+
+    .reward-row input.threshold-input {
+      width: 70px;
+      text-align: center;
+    }
+
+    .reward-row input.label-input {
+      min-width: 110px;
+      flex: 1 1 110px;
+    }
+
+    .reward-row input.desc-input {
+      min-width: 140px;
+      flex: 2 1 140px;
+    }
+
+    .reward-add-btn {
+      align-self: flex-start;
+      margin-top: 0.2rem;
+      font-size: 0.78rem;
+      padding-inline: 0.7rem;
+      padding-block: 0.25rem;
+    }
+
     @media (max-width: 800px) {
       body {
         padding: 0.75rem;
@@ -390,6 +449,9 @@
             <span class="label">Siguiente objetivo:</span>
             <span class="value" id="nextGoal">20 pts para ⭐ Pequeño premio</span>
           </div>
+
+          <!-- Editor de premios configurable -->
+          <div id="rewardsEditor" class="reward-editor"></div>
         </div>
       </div>
 
@@ -403,17 +465,17 @@
 
     <div class="footer-note">
       Datos guardados localmente en este navegador (no se envían a ningún servidor). Versión Deluxe multi-semana con
-      colores, emojis y gráfico.
+      colores, emojis, gráfico y premios configurables.
     </div>
   </div>
 
   <script>
     // ------------------ CONFIGURACIÓN ------------------
     const DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-    const STORAGE_KEY = "tableroRetosHijo_deluxe_v1";
+    const STORAGE_KEY = "tableroRetosHijo_deluxe_v2";
 
-    const REWARDS = [
-      { threshold: 20, label: "⭐ Pequeño premio", desc: "Elegir una actividad especial en casa." },
+    const DEFAULT_REWARDS = [
+      { threshold: 20, label: "⭐ Pequeño premio", desc: "Helado, juguete pequeño u otro detalle." },
       { threshold: 40, label: "🌟 Súper premio", desc: "Película en familia con snack favorito." },
       { threshold: 60, label: "🏅 Mega premio", desc: "Salida especial al parque o actividad elegida." },
       { threshold: 80, label: "🏆 Gran campeón", desc: "Actividad sorpresa muy especial en familia." }
@@ -422,7 +484,8 @@
     let state = {
       childName: "",
       currentWeekIndex: 0,
-      weeks: []
+      weeks: [],
+      rewards: []
     };
 
     // ------------------ UTILIDADES ------------------
@@ -445,7 +508,16 @@
       };
     }
 
+    function ensureRewards() {
+      if (!Array.isArray(state.rewards) || state.rewards.length === 0) {
+        state.rewards = DEFAULT_REWARDS.map(r => ({ ...r }));
+      }
+      // ordenar siempre por threshold ascendente
+      state.rewards.sort((a, b) => (a.threshold || 0) - (b.threshold || 0));
+    }
+
     function saveState() {
+      ensureRewards();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }
 
@@ -467,6 +539,7 @@
       if (state.currentWeekIndex < 0 || state.currentWeekIndex >= state.weeks.length) {
         state.currentWeekIndex = 0;
       }
+      ensureRewards();
     }
 
     function createElement(tag, options = {}) {
@@ -645,6 +718,130 @@
       updateTotals();
     }
 
+    function renderRewardsEditor() {
+      ensureRewards();
+      const container = document.getElementById("rewardsEditor");
+      if (!container) return;
+
+      container.innerHTML = "";
+
+      const header = createElement("div", {
+        className: "reward-editor-header",
+        text: "Configura aquí los premios (puntos mínimos, nombre y descripción). Se guardan automáticamente."
+      });
+      container.appendChild(header);
+
+      state.rewards.forEach((rw, idx) => {
+        const row = createElement("div", { className: "reward-row" });
+
+        const thresholdInput = createElement("input", {
+          className: "threshold-input",
+          attrs: {
+            type: "text",
+            inputmode: "numeric",
+            value: rw.threshold ?? 0,
+            "data-reward-index": idx
+          },
+          on: {
+            change: (e) => {
+              const i = parseInt(e.target.getAttribute("data-reward-index"), 10);
+              const raw = e.target.value.trim();
+              const parsed = raw === "" ? 0 : Number(raw.replace(",", "."));
+              const finalVal = isNaN(parsed) ? 0 : Math.trunc(parsed);
+              state.rewards[i].threshold = finalVal;
+              e.target.value = finalVal;
+              state.rewards.sort((a, b) => (a.threshold || 0) - (b.threshold || 0));
+              saveState();
+              updateTotals();
+            }
+          }
+        });
+
+        const labelInput = createElement("input", {
+          className: "label-input",
+          attrs: {
+            type: "text",
+            value: rw.label || "",
+            "data-reward-index": idx,
+            placeholder: "Nombre del premio"
+          },
+          on: {
+            change: (e) => {
+              const i = parseInt(e.target.getAttribute("data-reward-index"), 10);
+              state.rewards[i].label = e.target.value.trim();
+              saveState();
+              updateTotals();
+            }
+          }
+        });
+
+        const descInput = createElement("input", {
+          className: "desc-input",
+          attrs: {
+            type: "text",
+            value: rw.desc || "",
+            "data-reward-index": idx,
+            placeholder: "Descripción"
+          },
+          on: {
+            change: (e) => {
+              const i = parseInt(e.target.getAttribute("data-reward-index"), 10);
+              state.rewards[i].desc = e.target.value.trim();
+              saveState();
+              updateTotals();
+            }
+          }
+        });
+
+        const delBtn = createElement("button", {
+          className: "danger",
+          text: "🗑",
+          attrs: { title: "Eliminar este premio" },
+          on: {
+            click: () => {
+              const confirmDelete = confirm(`¿Eliminar el premio "${rw.label}"?`);
+              if (!confirmDelete) return;
+              state.rewards.splice(idx, 1);
+              if (state.rewards.length === 0) {
+                ensureRewards();
+              }
+              saveState();
+              updateTotals();
+            }
+          }
+        });
+
+        row.appendChild(thresholdInput);
+        row.appendChild(labelInput);
+        row.appendChild(descInput);
+        row.appendChild(delBtn);
+
+        container.appendChild(row);
+      });
+
+      const addBtn = createElement("button", {
+        className: "secondary reward-add-btn",
+        text: "➕ Agregar premio",
+        on: {
+          click: () => {
+            const base = state.rewards.length
+              ? (state.rewards[state.rewards.length - 1].threshold || 0) + 20
+              : 20;
+            state.rewards.push({
+              threshold: base,
+              label: "Nuevo premio",
+              desc: "Describe aquí el premio (helado, juguete, paseo, etc.)."
+            });
+            state.rewards.sort((a, b) => (a.threshold || 0) - (b.threshold || 0));
+            saveState();
+            updateTotals();
+          }
+        }
+      });
+
+      container.appendChild(addBtn);
+    }
+
     function updateTotals() {
       const currentWeek = state.weeks[state.currentWeekIndex];
       const tfootRow = document.getElementById("totalsByDayRow");
@@ -684,11 +881,16 @@
       document.getElementById("totalNegativos").textContent = totalNegativos.toString();
       document.getElementById("overallEmoji").textContent = overallEmojiForTotal(totalGeneral);
 
-      // Recompensas
+      // Recompensas (usando las configuradas)
+      ensureRewards();
+      const rewardsSorted = [...state.rewards].sort(
+        (a, b) => (a.threshold || 0) - (b.threshold || 0)
+      );
+
       let reached = null;
-      for (let i = REWARDS.length - 1; i >= 0; i--) {
-        if (totalGeneral >= REWARDS[i].threshold) {
-          reached = REWARDS[i];
+      for (let i = rewardsSorted.length - 1; i >= 0; i--) {
+        if (totalGeneral >= (rewardsSorted[i].threshold || 0)) {
+          reached = rewardsSorted[i];
           break;
         }
       }
@@ -698,22 +900,22 @@
       const nextGoal = document.getElementById("nextGoal");
 
       if (reached) {
-        rewardLabel.textContent = reached.label;
-        rewardDesc.textContent = reached.desc;
+        rewardLabel.textContent = reached.label || "Premio sin nombre";
+        rewardDesc.textContent = reached.desc || "";
       } else {
         rewardLabel.textContent = "Ninguna aún";
         rewardDesc.textContent = "Sigue sumando puntos 😊";
       }
 
       let nextReward = null;
-      for (let i = 0; i < REWARDS.length; i++) {
-        if (totalGeneral < REWARDS[i].threshold) {
-          nextReward = REWARDS[i];
+      for (let i = 0; i < rewardsSorted.length; i++) {
+        if (totalGeneral < (rewardsSorted[i].threshold || 0)) {
+          nextReward = rewardsSorted[i];
           break;
         }
       }
       if (nextReward) {
-        const faltan = nextReward.threshold - totalGeneral;
+        const faltan = (nextReward.threshold || 0) - totalGeneral;
         nextGoal.textContent = `${faltan} pts para ${nextReward.label}`;
       } else {
         nextGoal.textContent = "¡Ya alcanzaste la máxima recompensa! 🎉";
@@ -721,6 +923,9 @@
 
       // Gráfico
       drawWeekChart(totalsByDay);
+
+      // Editor de premios
+      renderRewardsEditor();
     }
 
     function drawWeekChart(totalsByDay) {
@@ -732,7 +937,7 @@
 
       ctx.clearRect(0, 0, width, height);
 
-      const maxVal = Math.max(...totalsByDay.map(Math.abs), 10);
+      const maxVal = Math.max(...totalsByDay.map(v => Math.abs(v)), 10);
       const barWidth = width / (totalsByDay.length * 1.6);
       const gap = barWidth * 0.6;
       const baseline = height * 0.6;
