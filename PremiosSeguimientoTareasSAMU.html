@@ -790,29 +790,56 @@
       }
       emojiSpan.textContent = emojiForValue(v);
     }
+// Mantiene referencia al último campo de texto que tuvo el foco
+let lastFocusedField = null;
+
+document.addEventListener("focusin", (e) => {
+  const el = e.target;
+  if (!el) return;
+  const tag = el.tagName?.toLowerCase();
+  if (tag !== "input" && tag !== "textarea") return;
+  if (el.type && el.type !== "text") return; // solo manejamos inputs de texto
+
+  lastFocusedField = el;
+});
 
     // Inserta emoji en el input que tenga el foco
     function insertEmoji(emoji) {
-      const active = document.activeElement;
-      if (!active) return;
-      const tag = active.tagName.toLowerCase();
-      if (tag !== "input" && tag !== "textarea") return;
-      if (active.type && active.type !== "text") return;
+  // Prioriza el input que guardamos como último con foco
+  let target = null;
 
-      const start = active.selectionStart ?? active.value.length;
-      const end = active.selectionEnd ?? active.value.length;
-      const before = active.value.slice(0, start);
-      const after = active.value.slice(end);
-
-      active.value = before + emoji + after;
-      const newPos = before.length + emoji.length;
-      active.selectionStart = newPos;
-      active.selectionEnd = newPos;
-
-      // Dispara evento change para que se guarde si es un campo gestionado
-      const evt = new Event("change", { bubbles: true });
-      active.dispatchEvent(evt);
+  const active = document.activeElement;
+  if (active) {
+    const tag = active.tagName?.toLowerCase();
+    if ((tag === "input" || tag === "textarea") && (!active.type || active.type === "text")) {
+      target = active;
     }
+  }
+
+  // Si el foco actual no es un input de texto, usa el último que recordamos
+  if (!target && lastFocusedField) {
+    target = lastFocusedField;
+  }
+
+  if (!target) return; // no hay dónde insertar
+
+  const start = target.selectionStart ?? target.value.length;
+  const end = target.selectionEnd ?? target.value.length;
+  const before = target.value.slice(0, start);
+  const after = target.value.slice(end);
+
+  target.value = before + emoji + after;
+  const newPos = before.length + emoji.length;
+  target.selectionStart = newPos;
+  target.selectionEnd = newPos;
+  target.focus(); // devolver el foco al input
+
+  // Dispara change para que se guarde si es un campo gestionado
+  const evt = new Event("change", { bubbles: true });
+  target.dispatchEvent(evt);
+}
+
+
 
     // ------------------ RENDERIZADO PRINCIPAL ------------------
     function render() {
@@ -1311,6 +1338,7 @@ emojiPanel.addEventListener("click", (e) => {
   </script>
 </body>
 </html>
+
 
 
 
