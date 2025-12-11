@@ -621,8 +621,26 @@
 <button
   type="button"
   onclick="document.getElementById('emojiPanel').style.display='none';"
-  style="position:absolute; top:8px; right:10px; border:none; background:transparent; font-size:1.1rem; cursor:pointer;"
-><a font-color:red>X</a>a</button>
+  style="
+    position:absolute;
+    top:8px;
+    right:10px;
+    border:none;
+    background:#ef4444;        /* rojo */
+    color:white;               /* icono blanco */
+    font-size:1.1rem;
+    width:28px;
+    height:28px;
+    border-radius:50%;         /* redondo */
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 2px 5px rgba(0,0,0,0.15);
+  "
+  onmouseover="this.style.background='#dc2626'"   <!-- rojo más oscuro -->
+  onmouseout="this.style.background='#ef4444'"
+>✖</button>
   <!-- 😊 Caritas y emociones -->
   <details class="emoji-category">
     <summary>😊 Caritas y emociones</summary>
@@ -1561,6 +1579,7 @@ emojiPanel.addEventListener("click", (e) => {
   </script>
 </body>
 </html>
+
 
 
 
