@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Tablero de Retos y Puntajes - Deluxe</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 1.5rem;
+      background: #f5f7fb;
+      color: #111827;
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 1.8rem;
+      text-align: center;
+    }
+
+    .app-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+      padding: 1.5rem 1.75rem 2rem;
+    }
+
+    .top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .field-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .field-group label {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    input[type="text"] {
+      padding: 0.35rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid #d0d4e0;
+      min-width: 200px;
+      font-size: 0.9rem;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
+    }
+
+    input.score-input {
+      width: 100%;
+      max-width: 60px;
+      padding: 0.2rem 0.25rem;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      text-align: center;
+      font-size: 0.85rem;
+    }
+
+    input.score-input:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 0.38rem 0.9rem;
+      background: #2563eb;
+      color: white;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      white-space: nowrap;
+    }
+
+    button.secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    button.danger {
+      background: #ef4444;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    button:hover:not(:disabled) {
+      filter: brightness(0.97);
+    }
+
+    button:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+
+    .small-text {
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      margin-top: 1rem;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 700px;
+    }
+
+    thead {
+      background: #eff6ff;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 0.45rem 0.4rem;
+      text-align: center;
+      font-size: 0.85rem;
+    }
+
+    th:first-child,
+    td:first-child {
+      text-align: left;
+    }
+
+    th {
+      font-weight: 600;
+    }
+
+    tr:nth-child(even) td {
+      background: #f9fafb;
+    }
+
+    .task-name-input {
+      width: 100%;
+      max-width: 260px;
+      padding: 0.2rem 0.45rem;
+      border-radius: 8px;
+      border: 1px solid #d0d4e0;
+      font-size: 0.85rem;
+    }
+
+    .task-name-input:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
+    }
+
+    .task-actions {
+      display: flex;
+      gap: 0.3rem;
+      justify-content: flex-end;
+    }
+
+    .totals-row {
+      background: #e0ecff;
+      font-weight: 600;
+    }
+
+    .summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 1.2rem;
+      justify-content: space-between;
+    }
+
+    .summary-left,
+    .summary-right {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: stretch;
+    }
+
+    .summary-card {
+      min-width: 220px;
+      padding: 0.8rem 1rem;
+      border-radius: 12px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .summary-card h3 {
+      margin: 0;
+      font-size: 0.95rem;
+      color: #374151;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .summary-main {
+      font-size: 1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .summary-main span.emoji {
+      font-size: 1.4rem;
+    }
+
+    .summary-inline {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+    }
+
+    .summary-inline span.label {
+      color: #6b7280;
+    }
+
+    .summary-inline span.value {
+      font-weight: 600;
+    }
+
+    .footer-note {
+      margin-top: 0.7rem;
+      text-align: right;
+      font-size: 0.75rem;
+      color: #9ca3af;
+    }
+
+    .week-controls span#weekLabel {
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      background: #eef2ff;
+      cursor: pointer;
+    }
+
+    .week-controls span#weekLabel:hover {
+      background: #e0e7ff;
+    }
+
+    /* Colores por valor */
+    .score-cell {
+      transition: background-color 0.15s ease;
+    }
+    .score-cell.positive {
+      background: #ecfdf3;
+    }
+    .score-cell.negative {
+      background: #fef2f2;
+    }
+    .score-cell.zero {
+      background: #f9fafb;
+    }
+
+    .emoji-pill {
+      margin-left: 4px;
+      font-size: 0.85rem;
+      vertical-align: middle;
+    }
+
+    /* Canvas gráfico */
+    #weekChart {
+      width: 100%;
+    }
+
+    @media (max-width: 800px) {
+      body {
+        padding: 0.75rem;
+      }
+      .app-container {
+        padding: 1rem;
+      }
+      h1 {
+        font-size: 1.4rem;
+      }
+      .top-bar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <h1>Tablero de Retos y Puntajes</h1>
+
+    <div class="top-bar">
+      <div class="field-group">
+        <label for="childName">Nombre de mi hijo(a):</label>
+        <input type="text" id="childName" placeholder="Escribe el nombre aquí..." />
+      </div>
+
+      <div class="field-group week-controls">
+        <label>Semana:</label>
+        <button id="prevWeekBtn" class="secondary">◀</button>
+        <span id="weekLabel" title="Haz clic para renombrar la semana"></span>
+        <button id="nextWeekBtn" class="secondary">▶</button>
+        <button id="addWeekBtn" class="secondary">➕ Nueva semana</button>
+      </div>
+
+      <div class="field-group">
+        <button id="addTaskBtn">➕ Agregar reto / actividad</button>
+        <button id="resetBtn" class="secondary">🧹 Limpiar puntajes semana</button>
+      </div>
+    </div>
+
+    <div class="small-text">
+      👉 Usa puntajes <strong>positivos</strong> o <strong>negativos</strong> escribiendo números como
+      <code>5</code> o <code>-3</code>.  
+      👉 Cada semana guarda sus propios puntajes.
+    </div>
+
+    <div class="table-wrapper">
+      <table id="scoreTable">
+        <thead>
+          <tr id="headerRow">
+            <th>Reto / Actividad</th>
+          </tr>
+        </thead>
+        <tbody id="tasksBody"></tbody>
+        <tfoot>
+          <tr class="totals-row" id="totalsByDayRow">
+            <td>Total por día</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="summary">
+      <div class="summary-left">
+        <div class="summary-card" id="overallSummary">
+          <h3>Resumen semana actual</h3>
+          <div class="summary-main">
+            <span>Puntos totales:</span>
+            <span id="totalGeneral">0</span>
+            <span id="overallEmoji" class="emoji">😐</span>
+          </div>
+          <div class="summary-inline">
+            <span class="label">Puntos positivos:</span>
+            <span class="value" id="totalPositivos">0</span>
+          </div>
+          <div class="summary-inline">
+            <span class="label">Puntos negativos:</span>
+            <span class="value" id="totalNegativos">0</span>
+          </div>
+        </div>
+
+        <div class="summary-card" id="rewardCard">
+          <h3>Tablero de recompensas 🏆</h3>
+          <div class="summary-inline">
+            <span class="label">Mejor recompensa alcanzada:</span>
+            <span class="value" id="rewardLabel">Ninguna aún</span>
+          </div>
+          <div class="summary-inline">
+            <span class="label">Descripción:</span>
+            <span class="value" id="rewardDesc">Sigue sumando puntos 😊</span>
+          </div>
+          <div class="summary-inline">
+            <span class="label">Siguiente objetivo:</span>
+            <span class="value" id="nextGoal">20 pts para ⭐ Pequeño premio</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary-right">
+        <div class="summary-card">
+          <h3>Gráfico semanal 📊</h3>
+          <canvas id="weekChart" height="180"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      Datos guardados localmente en este navegador (no se envían a ningún servidor). Versión Deluxe multi-semana con
+      colores, emojis y gráfico.
+    </div>
+  </div>
+
+  <script>
+    // ------------------ CONFIGURACIÓN ------------------
+    const DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+    const STORAGE_KEY = "tableroRetosHijo_deluxe_v1";
+
+    const REWARDS = [
+      { threshold: 20, label: "⭐ Pequeño premio", desc: "Elegir una actividad especial en casa." },
+      { threshold: 40, label: "🌟 Súper premio", desc: "Película en familia con snack favorito." },
+      { threshold: 60, label: "🏅 Mega premio", desc: "Salida especial al parque o actividad elegida." },
+      { threshold: 80, label: "🏆 Gran campeón", desc: "Actividad sorpresa muy especial en familia." }
+    ];
+
+    let state = {
+      childName: "",
+      currentWeekIndex: 0,
+      weeks: []
+    };
+
+    // ------------------ UTILIDADES ------------------
+    function createDefaultTasks() {
+      return [
+        { name: "Ordenar los juguetes", scores: [0, 0, 0, 0, 0, 0, 0] },
+        { name: "Ser respetuoso", scores: [0, 0, 0, 0, 0, 0, 0] },
+        { name: "Seguir instrucciones", scores: [0, 0, 0, 0, 0, 0, 0] },
+        { name: "Hacer caso a la primera", scores: [0, 0, 0, 0, 0, 0, 0] },
+        { name: "Saludar y despedirse", scores: [0, 0, 0, 0, 0, 0, 0] },
+        { name: "Hacer tareas del colegio", scores: [0, 0, 0, 0, 0, 0, 0] },
+        { name: "Ayudar en casa", scores: [0, 0, 0, 0, 0, 0, 0] }
+      ];
+    }
+
+    function createNewWeek(name) {
+      return {
+        name: name,
+        tasks: createDefaultTasks()
+      };
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function loadState() {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed.weeks)) {
+            state = parsed;
+          }
+        } catch (e) {
+          console.error("Error al leer estado guardado:", e);
+        }
+      }
+      if (!state.weeks || state.weeks.length === 0) {
+        state.weeks = [createNewWeek("Semana 1")];
+      }
+      if (state.currentWeekIndex < 0 || state.currentWeekIndex >= state.weeks.length) {
+        state.currentWeekIndex = 0;
+      }
+    }
+
+    function createElement(tag, options = {}) {
+      const el = document.createElement(tag);
+      if (options.className) el.className = options.className;
+      if (options.text != null) el.textContent = options.text;
+      if (options.html != null) el.innerHTML = options.html;
+      if (options.attrs) {
+        for (const [k, v] of Object.entries(options.attrs)) {
+          el.setAttribute(k, v);
+        }
+      }
+      if (options.on) {
+        for (const [eventName, handler] of Object.entries(options.on)) {
+          el.addEventListener(eventName, handler);
+        }
+      }
+      return el;
+    }
+
+    function emojiForValue(v) {
+      if (v >= 5) return "🏅";
+      if (v > 0) return "😊";
+      if (v === 0) return "😐";
+      if (v <= -5) return "🚫";
+      if (v < 0) return "⚠️";
+      return "😐";
+    }
+
+    function overallEmojiForTotal(total) {
+      if (total >= 80) return "🏆";
+      if (total >= 60) return "🤩";
+      if (total >= 40) return "😄";
+      if (total > 0) return "🙂";
+      if (total === 0) return "😐";
+      if (total < 0) return "😕";
+      return "😐";
+    }
+
+    function updateCellStyle(td, value) {
+      const v = Number(value) || 0;
+      td.classList.remove("positive", "negative", "zero", "score-cell");
+      td.classList.add("score-cell");
+      if (v > 0) td.classList.add("positive");
+      else if (v < 0) td.classList.add("negative");
+      else td.classList.add("zero");
+
+      let emojiSpan = td.querySelector(".emoji-pill");
+      if (!emojiSpan) {
+        emojiSpan = createElement("span", { className: "emoji-pill" });
+        td.appendChild(emojiSpan);
+      }
+      emojiSpan.textContent = emojiForValue(v);
+    }
+
+    // ------------------ RENDERIZADO PRINCIPAL ------------------
+    function render() {
+      const childNameInput = document.getElementById("childName");
+      childNameInput.value = state.childName || "";
+
+      const currentWeek = state.weeks[state.currentWeekIndex];
+
+      // Controles de semana
+      const weekLabel = document.getElementById("weekLabel");
+      weekLabel.textContent = currentWeek.name || `Semana ${state.currentWeekIndex + 1}`;
+
+      const prevWeekBtn = document.getElementById("prevWeekBtn");
+      const nextWeekBtn = document.getElementById("nextWeekBtn");
+      prevWeekBtn.disabled = state.currentWeekIndex === 0;
+      nextWeekBtn.disabled = state.currentWeekIndex === state.weeks.length - 1;
+
+      // Encabezados
+      const headerRow = document.getElementById("headerRow");
+      while (headerRow.children.length > 1) {
+        headerRow.removeChild(headerRow.lastChild);
+      }
+      DAYS.forEach((day) => {
+        const th = createElement("th", { text: day });
+        headerRow.appendChild(th);
+      });
+      const thTotal = createElement("th", { text: "Total por reto" });
+      const thActions = createElement("th", { text: "Acciones" });
+      headerRow.appendChild(thTotal);
+      headerRow.appendChild(thActions);
+
+      // Cuerpo de tareas
+      const tbody = document.getElementById("tasksBody");
+      tbody.innerHTML = "";
+
+      currentWeek.tasks.forEach((task, taskIndex) => {
+        const tr = document.createElement("tr");
+
+        // Nombre del reto
+        const tdName = document.createElement("td");
+        const nameInput = createElement("input", {
+          className: "task-name-input",
+          attrs: { type: "text", value: task.name || "", "data-task-index": taskIndex },
+          on: {
+            change: (e) => {
+              const idx = parseInt(e.target.getAttribute("data-task-index"), 10);
+              currentWeek.tasks[idx].name = e.target.value.trim();
+              saveState();
+            }
+          }
+        });
+        tdName.appendChild(nameInput);
+        tr.appendChild(tdName);
+
+        // Celdas de puntaje
+        let totalTask = 0;
+        DAYS.forEach((_, dayIndex) => {
+          const td = document.createElement("td");
+          const val = task.scores[dayIndex] ?? 0;
+          totalTask += Number(val) || 0;
+
+          const input = createElement("input", {
+            className: "score-input",
+            attrs: {
+              type: "text",
+              inputmode: "numeric",
+              pattern: "-?[0-9]*",
+              "data-task-index": taskIndex,
+              "data-day-index": dayIndex,
+              value: val
+            },
+            on: {
+              change: (e) => {
+                const tIdx = parseInt(e.target.getAttribute("data-task-index"), 10);
+                const dIdx = parseInt(e.target.getAttribute("data-day-index"), 10);
+                const raw = e.target.value.trim();
+                const parsed = raw === "" ? 0 : Number(raw.replace(",", "."));
+                const finalVal = isNaN(parsed) ? 0 : Math.trunc(parsed);
+                currentWeek.tasks[tIdx].scores[dIdx] = finalVal;
+                e.target.value = finalVal;
+                updateCellStyle(td, finalVal);
+                saveState();
+                updateTotals();
+              }
+            }
+          });
+
+          td.appendChild(input);
+          updateCellStyle(td, val);
+          tr.appendChild(td);
+        });
+
+        // Total por reto
+        const tdTotal = createElement("td", { text: totalTask.toString() });
+        tr.appendChild(tdTotal);
+
+        // Acciones
+        const tdActions = document.createElement("td");
+        tdActions.className = "task-actions";
+        const deleteBtn = createElement("button", {
+          className: "danger",
+          text: "🗑",
+          attrs: { title: "Eliminar este reto" },
+          on: {
+            click: () => {
+              const confirmDelete = confirm(`¿Eliminar el reto "${task.name}"?`);
+              if (confirmDelete) {
+                currentWeek.tasks.splice(taskIndex, 1);
+                saveState();
+                render();
+                updateTotals();
+              }
+            }
+          }
+        });
+        tdActions.appendChild(deleteBtn);
+        tr.appendChild(tdActions);
+
+        tbody.appendChild(tr);
+      });
+
+      updateTotals();
+    }
+
+    function updateTotals() {
+      const currentWeek = state.weeks[state.currentWeekIndex];
+      const tfootRow = document.getElementById("totalsByDayRow");
+      while (tfootRow.children.length > 1) {
+        tfootRow.removeChild(tfootRow.lastChild);
+      }
+
+      const totalsByDay = new Array(DAYS.length).fill(0);
+      let totalGeneral = 0;
+      let totalPositivos = 0;
+      let totalNegativos = 0;
+
+      currentWeek.tasks.forEach((task) => {
+        task.scores.forEach((value, dayIndex) => {
+          const v = Number(value) || 0;
+          totalsByDay[dayIndex] += v;
+          totalGeneral += v;
+          if (v > 0) totalPositivos += v;
+          if (v < 0) totalNegativos += v;
+        });
+      });
+
+      totalsByDay.forEach((val) => {
+        const td = createElement("td", { text: val.toString() });
+        tfootRow.appendChild(td);
+      });
+
+      // columnas extra (total por reto y acciones)
+      const tdEmpty1 = createElement("td", { text: "" });
+      const tdEmpty2 = createElement("td", { text: "" });
+      tfootRow.appendChild(tdEmpty1);
+      tfootRow.appendChild(tdEmpty2);
+
+      // Resumen general
+      document.getElementById("totalGeneral").textContent = totalGeneral.toString();
+      document.getElementById("totalPositivos").textContent = totalPositivos.toString();
+      document.getElementById("totalNegativos").textContent = totalNegativos.toString();
+      document.getElementById("overallEmoji").textContent = overallEmojiForTotal(totalGeneral);
+
+      // Recompensas
+      let reached = null;
+      for (let i = REWARDS.length - 1; i >= 0; i--) {
+        if (totalGeneral >= REWARDS[i].threshold) {
+          reached = REWARDS[i];
+          break;
+        }
+      }
+
+      const rewardLabel = document.getElementById("rewardLabel");
+      const rewardDesc = document.getElementById("rewardDesc");
+      const nextGoal = document.getElementById("nextGoal");
+
+      if (reached) {
+        rewardLabel.textContent = reached.label;
+        rewardDesc.textContent = reached.desc;
+      } else {
+        rewardLabel.textContent = "Ninguna aún";
+        rewardDesc.textContent = "Sigue sumando puntos 😊";
+      }
+
+      let nextReward = null;
+      for (let i = 0; i < REWARDS.length; i++) {
+        if (totalGeneral < REWARDS[i].threshold) {
+          nextReward = REWARDS[i];
+          break;
+        }
+      }
+      if (nextReward) {
+        const faltan = nextReward.threshold - totalGeneral;
+        nextGoal.textContent = `${faltan} pts para ${nextReward.label}`;
+      } else {
+        nextGoal.textContent = "¡Ya alcanzaste la máxima recompensa! 🎉";
+      }
+
+      // Gráfico
+      drawWeekChart(totalsByDay);
+    }
+
+    function drawWeekChart(totalsByDay) {
+      const canvas = document.getElementById("weekChart");
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      const width = canvas.width;
+      const height = canvas.height;
+
+      ctx.clearRect(0, 0, width, height);
+
+      const maxVal = Math.max(...totalsByDay.map(Math.abs), 10);
+      const barWidth = width / (totalsByDay.length * 1.6);
+      const gap = barWidth * 0.6;
+      const baseline = height * 0.6;
+
+      ctx.strokeStyle = "#d1d5db";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, baseline);
+      ctx.lineTo(width, baseline);
+      ctx.stroke();
+
+      totalsByDay.forEach((val, idx) => {
+        const x = (barWidth + gap) * idx + gap;
+        const ratio = Math.abs(val) / maxVal;
+        const barHeight = ratio * (height * 0.45);
+
+        const isPositive = val >= 0;
+        const y = isPositive ? baseline - barHeight : baseline;
+
+        ctx.fillStyle = isPositive ? "#22c55e" : "#ef4444";
+        ctx.fillRect(x, y, barWidth, barHeight);
+
+        ctx.font = "10px system-ui";
+        ctx.fillStyle = "#374151";
+        ctx.textAlign = "center";
+        ctx.fillText(DAYS[idx][0], x + barWidth / 2, height - 6);
+      });
+    }
+
+    // ------------------ EVENTOS ------------------
+    function setupEvents() {
+      const childNameInput = document.getElementById("childName");
+      const addTaskBtn = document.getElementById("addTaskBtn");
+      const resetBtn = document.getElementById("resetBtn");
+      const prevWeekBtn = document.getElementById("prevWeekBtn");
+      const nextWeekBtn = document.getElementById("nextWeekBtn");
+      const addWeekBtn = document.getElementById("addWeekBtn");
+      const weekLabel = document.getElementById("weekLabel");
+
+      childNameInput.addEventListener("change", (e) => {
+        state.childName = e.target.value.trim();
+        saveState();
+      });
+
+      addTaskBtn.addEventListener("click", () => {
+        const currentWeek = state.weeks[state.currentWeekIndex];
+        const name = prompt("Nombre del nuevo reto / actividad:");
+        if (!name) return;
+        currentWeek.tasks.push({
+          name: name.trim(),
+          scores: [0, 0, 0, 0, 0, 0, 0]
+        });
+        saveState();
+        render();
+      });
+
+      resetBtn.addEventListener("click", () => {
+        const currentWeek = state.weeks[state.currentWeekIndex];
+        const confirmReset = confirm(
+          `Esto pondrá todos los puntajes en 0 para "${currentWeek.name}".\n\n¿Deseas continuar?`
+        );
+        if (!confirmReset) return;
+        currentWeek.tasks.forEach((t) => {
+          t.scores = [0, 0, 0, 0, 0, 0, 0];
+        });
+        saveState();
+        render();
+      });
+
+      prevWeekBtn.addEventListener("click", () => {
+        if (state.currentWeekIndex > 0) {
+          state.currentWeekIndex--;
+          saveState();
+          render();
+        }
+      });
+
+      nextWeekBtn.addEventListener("click", () => {
+        if (state.currentWeekIndex < state.weeks.length - 1) {
+          state.currentWeekIndex++;
+          saveState();
+          render();
+        }
+      });
+
+      addWeekBtn.addEventListener("click", () => {
+        const num = state.weeks.length + 1;
+        const name = prompt("Nombre de la nueva semana:", `Semana ${num}`) || `Semana ${num}`;
+        state.weeks.push(createNewWeek(name.trim()));
+        state.currentWeekIndex = state.weeks.length - 1;
+        saveState();
+        render();
+      });
+
+      weekLabel.addEventListener("click", () => {
+        const currentWeek = state.weeks[state.currentWeekIndex];
+        const newName = prompt("Renombra esta semana:", currentWeek.name);
+        if (!newName) return;
+        currentWeek.name = newName.trim();
+        saveState();
+        render();
+      });
+    }
+
+    // ------------------ INICIO ------------------
+    document.addEventListener("DOMContentLoaded", () => {
+      loadState();
+      setupEvents();
+      render();
+    });
+  </script>
+</body>
+</html>
