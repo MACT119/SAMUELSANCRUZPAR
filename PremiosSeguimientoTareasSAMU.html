@@ -56,7 +56,7 @@
       padding: 0.35rem 0.6rem;
       border-radius: 999px;
       border: 1px solid #d0d4e0;
-      min-width: 100px;
+      min-width: 200px;
       font-size: 0.9rem;
     }
 
@@ -67,13 +67,13 @@
     }
 
     input.score-input {
-      width: 50%;
-      max-width: 20px;
-      padding: 0.2rem 0.25rem;
+      width: 100%;
+      max-width: 38px; /* más angostas */
+      padding: 0.15rem 0.2rem;
       border-radius: 8px;
       border: 1px solid #d1d5db;
       text-align: center;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
     }
 
     input.score-input:focus {
@@ -134,6 +134,7 @@
       border-collapse: collapse;
       width: 100%;
       min-width: 700px;
+      table-layout: fixed; /* reparte el ancho de forma consistente */
     }
 
     thead {
@@ -146,11 +147,15 @@
       padding: 0.45rem 0.4rem;
       text-align: center;
       font-size: 0.85rem;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
     }
 
     th:first-child,
     td:first-child {
       text-align: left;
+      min-width: 260px;
+      width: 260px;
     }
 
     th {
@@ -163,7 +168,7 @@
 
     .task-name-input {
       width: 100%;
-      max-width: 260px;
+      max-width: 330px;
       padding: 0.2rem 0.45rem;
       border-radius: 8px;
       border: 1px solid #d0d4e0;
@@ -353,6 +358,42 @@
       padding-block: 0.25rem;
     }
 
+    /* Catálogo de emojis */
+    .emoji-palette {
+      margin-top: 0.4rem;
+      padding: 0.4rem 0.5rem;
+      border-radius: 8px;
+      background: #f3f4ff;
+      border: 1px dashed #c7d2fe;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+      align-items: center;
+    }
+
+    .emoji-palette-label {
+      width: 100%;
+      font-size: 0.78rem;
+      color: #4b5563;
+      margin-bottom: 0.15rem;
+    }
+
+    .emoji-btn {
+      border-radius: 999px;
+      border: none;
+      padding: 0.1rem 0.35rem;
+      background: #eef2ff;
+      cursor: pointer;
+      font-size: 1.1rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .emoji-btn:hover {
+      background: #e0e7ff;
+    }
+
     @media (max-width: 800px) {
       body {
         padding: 0.75rem;
@@ -365,7 +406,25 @@
       }
       .top-bar {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
+        gap: 0.75rem;
+      }
+      .field-group {
+        width: 100%;
+        justify-content: space-between;
+      }
+      th:first-child,
+      td:first-child {
+        min-width: 55%;
+        width: 55%;
+      }
+      input.score-input {
+        max-width: 32px;
+        font-size: 0.75rem;
+        padding: 0.1rem 0.15rem;
+      }
+      .table-wrapper {
+        margin-top: 0.75rem;
       }
     }
   </style>
@@ -450,7 +509,7 @@
             <span class="value" id="nextGoal">20 pts para ⭐ Pequeño premio</span>
           </div>
 
-          <!-- Editor de premios configurable -->
+          <!-- Editor de premios configurable + emojis -->
           <div id="rewardsEditor" class="reward-editor"></div>
         </div>
       </div>
@@ -465,20 +524,25 @@
 
     <div class="footer-note">
       Datos guardados localmente en este navegador (no se envían a ningún servidor). Versión Deluxe multi-semana con
-      colores, emojis, gráfico y premios configurables.
+      colores, emojis, gráfico, premios configurables y catálogo de emojis.
     </div>
   </div>
 
   <script>
     // ------------------ CONFIGURACIÓN ------------------
     const DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-    const STORAGE_KEY = "tableroRetosHijo_deluxe_v2";
+    const STORAGE_KEY = "tableroRetosHijo_deluxe_v3";
 
     const DEFAULT_REWARDS = [
       { threshold: 20, label: "⭐ Pequeño premio", desc: "Helado, juguete pequeño u otro detalle." },
       { threshold: 40, label: "🌟 Súper premio", desc: "Película en familia con snack favorito." },
       { threshold: 60, label: "🏅 Mega premio", desc: "Salida especial al parque o actividad elegida." },
       { threshold: 80, label: "🏆 Gran campeón", desc: "Actividad sorpresa muy especial en familia." }
+    ];
+
+    const EMOJI_PALETTE = [
+      "⭐","🌟","🏅","🏆","🎁","🎉","🍦","🍭","🍕",
+      "🚗","🎮","📚","🎵","😊","😄","🤩","😐","⚠️","🚫"
     ];
 
     let state = {
@@ -512,7 +576,6 @@
       if (!Array.isArray(state.rewards) || state.rewards.length === 0) {
         state.rewards = DEFAULT_REWARDS.map(r => ({ ...r }));
       }
-      // ordenar siempre por threshold ascendente
       state.rewards.sort((a, b) => (a.threshold || 0) - (b.threshold || 0));
     }
 
@@ -593,6 +656,29 @@
         td.appendChild(emojiSpan);
       }
       emojiSpan.textContent = emojiForValue(v);
+    }
+
+    // Inserta emoji en el input que tenga el foco
+    function insertEmoji(emoji) {
+      const active = document.activeElement;
+      if (!active) return;
+      const tag = active.tagName.toLowerCase();
+      if (tag !== "input" && tag !== "textarea") return;
+      if (active.type && active.type !== "text") return;
+
+      const start = active.selectionStart ?? active.value.length;
+      const end = active.selectionEnd ?? active.value.length;
+      const before = active.value.slice(0, start);
+      const after = active.value.slice(end);
+
+      active.value = before + emoji + after;
+      const newPos = before.length + emoji.length;
+      active.selectionStart = newPos;
+      active.selectionEnd = newPos;
+
+      // Dispara evento change para que se guarde si es un campo gestionado
+      const evt = new Event("change", { bubbles: true });
+      active.dispatchEvent(evt);
     }
 
     // ------------------ RENDERIZADO PRINCIPAL ------------------
@@ -731,6 +817,29 @@
       });
       container.appendChild(header);
 
+      // Catálogo de emojis
+      const palette = createElement("div", { className: "emoji-palette" });
+      const paletteLabel = createElement("div", {
+        className: "emoji-palette-label",
+        text: "Emojis rápidos: haz clic en uno y se insertará en el campo de texto donde tengas el cursor (nombre de reto, premio o descripción)."
+      });
+      palette.appendChild(paletteLabel);
+
+      EMOJI_PALETTE.forEach((emoji) => {
+        const btn = createElement("button", {
+          className: "emoji-btn",
+          text: emoji,
+          attrs: { type: "button" },
+          on: {
+            click: () => insertEmoji(emoji)
+          }
+        });
+        palette.appendChild(btn);
+      });
+
+      container.appendChild(palette);
+
+      // Filas de premios
       state.rewards.forEach((rw, idx) => {
         const row = createElement("div", { className: "reward-row" });
 
@@ -881,7 +990,7 @@
       document.getElementById("totalNegativos").textContent = totalNegativos.toString();
       document.getElementById("overallEmoji").textContent = overallEmojiForTotal(totalGeneral);
 
-      // Recompensas (usando las configuradas)
+      // Recompensas
       ensureRewards();
       const rewardsSorted = [...state.rewards].sort(
         (a, b) => (a.threshold || 0) - (b.threshold || 0)
@@ -924,7 +1033,7 @@
       // Gráfico
       drawWeekChart(totalsByDay);
 
-      // Editor de premios
+      // Editor de premios + emojis
       renderRewardsEditor();
     }
 
@@ -984,7 +1093,7 @@
 
       addTaskBtn.addEventListener("click", () => {
         const currentWeek = state.weeks[state.currentWeekIndex];
-        const name = prompt("Nombre del nuevo reto / actividad:");
+        const name = prompt("Nombre del nuevo reto / actividad (puedes incluir emojis):");
         if (!name) return;
         currentWeek.tasks.push({
           name: name.trim(),
@@ -1051,8 +1160,3 @@
   </script>
 </body>
 </html>
-
-
-
-
-
