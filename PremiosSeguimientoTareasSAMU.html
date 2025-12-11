@@ -605,7 +605,62 @@
       colores, emojis, gráfico, premios configurables y catálogo de emojis.
     </div>
   </div>
+  <!-- BOTÓN FLOTANTE -->
+<button id="emojiToggleBtn">🙂</button>
 
+<!-- PANEL FLOTANTE DE EMOJIS -->
+<div id="emojiPanel">
+  <h3>Catálogo de Emojis</h3>
+
+  <details class="emoji-category">
+    <summary>😊 Caritas y emociones</summary>
+    <div class="emoji-grid">
+      😀 😁 😂 🤣 😊 😇 🙂 🙃 😉 😍 😘 😜 🤪 🤨 🤓 😎 🤩 🥳 😡 😠 😤 😭 😱 😨 😰 😥 😓 😴 🤯 😳
+    </div>
+  </details>
+
+  <details class="emoji-category">
+    <summary>🐾 Animales</summary>
+    <div class="emoji-grid">
+      🐶 🐱 🐭 🐹 🐰 🦊 🐻 🐼 🐨 🐯 🦁 🐮 🐷 🐽 🐸 🐵 🐔 🐧 🐦 🐤 🐣 🐳 🐬 🐟 🐠 🐢 🦋
+    </div>
+  </details>
+
+  <details class="emoji-category">
+    <summary>🍎 Comida y bebida</summary>
+    <div class="emoji-grid">
+      🍎 🍊 🍌 🍉 🍇 🍓 🍍 🥭 🍔 🍟 🍕 🌭 🍿 🍩 🍪 🍰 🎂 🍧 🍦 🥤 🧃 🍵 ☕
+    </div>
+  </details>
+
+  <details class="emoji-category">
+    <summary>⚽ Deportes y juegos</summary>
+    <div class="emoji-grid">
+      ⚽ 🏀 🏈 ⚾ 🎾 🏐 🏉 🥏 🎱 🏓 🏸 🥅 🎮 ♟️ 🧩 🏆 🥇 🥈 🥉
+    </div>
+  </details>
+
+  <details class="emoji-category">
+    <summary>📦 Objetos</summary>
+    <div class="emoji-grid">
+      🎁 💡 🔔 📚 📘 📕 📒 ✏️ 🖊️ 📌 📎 🧸 🎒 🧮 ⚖️ 🔑 💻 🖥️ 📱 🔦
+    </div>
+  </details>
+
+  <details class="emoji-category">
+    <summary>🌿 Naturaleza</summary>
+    <div class="emoji-grid">
+      ☀️ 🌤️ ⛅ 🌦️ 🌧️ ⛈️ 🌈 ❄️ ☃️ 🌪️ 🌊 🌳 🌴 🌵 🌹 🌸 🌼 🌻 🌙 ⭐
+    </div>
+  </details>
+
+  <details class="emoji-category">
+    <summary>❤️ Símbolos</summary>
+    <div class="emoji-grid">
+      ❤️ 🧡 💛 💚 💙 💜 🖤 🤍 💯 💥 ❗ ❓ ❌ ✔️ ✨ ⭐ ⚠️ 🔔 🔥 💫
+    </div>
+  </details>
+</div>
   <script>
     // ------------------ CONFIGURACIÓN ------------------
     const DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -1254,65 +1309,9 @@ emojiPanel.addEventListener("click", (e) => {
 });
 
   </script>
-  <!-- BOTÓN FLOTANTE -->
-<button id="emojiToggleBtn">🙂</button>
-
-<!-- PANEL FLOTANTE DE EMOJIS -->
-<div id="emojiPanel">
-  <h3>Catálogo de Emojis</h3>
-
-  <details class="emoji-category">
-    <summary>😊 Caritas y emociones</summary>
-    <div class="emoji-grid">
-      😀 😁 😂 🤣 😊 😇 🙂 🙃 😉 😍 😘 😜 🤪 🤨 🤓 😎 🤩 🥳 😡 😠 😤 😭 😱 😨 😰 😥 😓 😴 🤯 😳
-    </div>
-  </details>
-
-  <details class="emoji-category">
-    <summary>🐾 Animales</summary>
-    <div class="emoji-grid">
-      🐶 🐱 🐭 🐹 🐰 🦊 🐻 🐼 🐨 🐯 🦁 🐮 🐷 🐽 🐸 🐵 🐔 🐧 🐦 🐤 🐣 🐳 🐬 🐟 🐠 🐢 🦋
-    </div>
-  </details>
-
-  <details class="emoji-category">
-    <summary>🍎 Comida y bebida</summary>
-    <div class="emoji-grid">
-      🍎 🍊 🍌 🍉 🍇 🍓 🍍 🥭 🍔 🍟 🍕 🌭 🍿 🍩 🍪 🍰 🎂 🍧 🍦 🥤 🧃 🍵 ☕
-    </div>
-  </details>
-
-  <details class="emoji-category">
-    <summary>⚽ Deportes y juegos</summary>
-    <div class="emoji-grid">
-      ⚽ 🏀 🏈 ⚾ 🎾 🏐 🏉 🥏 🎱 🏓 🏸 🥅 🎮 ♟️ 🧩 🏆 🥇 🥈 🥉
-    </div>
-  </details>
-
-  <details class="emoji-category">
-    <summary>📦 Objetos</summary>
-    <div class="emoji-grid">
-      🎁 💡 🔔 📚 📘 📕 📒 ✏️ 🖊️ 📌 📎 🧸 🎒 🧮 ⚖️ 🔑 💻 🖥️ 📱 🔦
-    </div>
-  </details>
-
-  <details class="emoji-category">
-    <summary>🌿 Naturaleza</summary>
-    <div class="emoji-grid">
-      ☀️ 🌤️ ⛅ 🌦️ 🌧️ ⛈️ 🌈 ❄️ ☃️ 🌪️ 🌊 🌳 🌴 🌵 🌹 🌸 🌼 🌻 🌙 ⭐
-    </div>
-  </details>
-
-  <details class="emoji-category">
-    <summary>❤️ Símbolos</summary>
-    <div class="emoji-grid">
-      ❤️ 🧡 💛 💚 💙 💜 🖤 🤍 💯 💥 ❗ ❓ ❌ ✔️ ✨ ⭐ ⚠️ 🔔 🔥 💫
-    </div>
-  </details>
-</div>
-
 </body>
 </html>
+
 
 
 
