@@ -938,21 +938,27 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
+  // UI status
   const statusEl = document.getElementById("firebaseStatus");
+  const syncEl = document.getElementById("syncStatus");
   const setStatus = (ok, msg) => {
     if (!statusEl) return;
     statusEl.textContent = msg;
     statusEl.style.background = ok ? "#dcfce7" : "#fee2e2";
     statusEl.style.color = ok ? "#166534" : "#991b1b";
   };
+  const setSync = (ok, msg) => {
+    if (!syncEl) return;
+    syncEl.textContent = msg;
+    syncEl.style.background = ok ? "#dcfce7" : "#e0f2fe";
+    syncEl.style.color = ok ? "#166534" : "#075985";
+  };
 
-  try {
-    // ✅ PEGA AQUÍ TU firebaseConfig 
-
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  // ✅ PEGA TU firebaseConfig COMPLETO AQUÍ (tal cual lo da Firebase)
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyB1F_JD-nHLJLMLuwZtXxpEbIUUU1sSjo0",
   authDomain: "samutodo-699a3.firebaseapp.com",
@@ -963,29 +969,117 @@ const firebaseConfig = {
   measurementId: "G-0FZKF3FKPN"
 };
 
-    // Validación mínima para evitar “falsos conectados”
+  // Helpers
+  async function sha256Hex(input) {
+    const data = new TextEncoder().encode(input);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  function debounce(fn, wait = 500) {
+    let t = null;
+    return (...args) => {
+      clearTimeout(t);
+      t = setTimeout(() => fn(...args), wait);
+    };
+  }
+
+  try {
     const required = ["apiKey", "authDomain", "projectId", "appId"];
     const missing = required.filter(k => !firebaseConfig?.[k]);
-    if (missing.length) {
-      setStatus(false, "❌ Firebase config incompleto: falta " + missing.join(", "));
-      throw new Error("Firebase config incompleto");
-    }
+    if (missing.length) throw new Error("Firebase config incompleto: " + missing.join(", "));
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
-
-    // Login anónimo (recomendado)
     await signInAnonymously(auth);
 
     window.firebaseApp = app;
     window.firestoreDB = db;
     window.firebaseReady = true;
-
     setStatus(true, "☁️ Firebase conectado correctamente");
+
+    // --- Cloud Sync API expuesta a tu app ---
+    let familyDocRef = null;
+    let applyingRemote = false;
+    let lastRemoteUpdatedMs = 0;
+
+    async function cloudInit(getLocalState, applyRemoteState) {
+      // 1) pedir código familiar (una vez por dispositivo)
+      let familyCode = localStorage.getItem("familyCode");
+      if (!familyCode) {
+        familyCode = prompt("Código de familia (compártelo con tu esposa para ver los mismos datos):") || "";
+        familyCode = familyCode.trim();
+        if (!familyCode) {
+          setSync(false, "⚠️ Sincronización desactivada: no hay código de familia");
+          return;
+        }
+        localStorage.setItem("familyCode", familyCode);
+      }
+
+      // 2) Convertir a hash para no exponer el código
+      const familyHash = await sha256Hex(familyCode);
+      familyDocRef = doc(db, "families", familyHash);
+
+      setSync(false, "☁️ Sincronización: conectando a la familia...");
+
+      // 3) Escuchar cambios remotos
+      onSnapshot(familyDocRef, (snap) => {
+        if (!snap.exists()) {
+          setSync(false, "☁️ Sincronización lista (aún sin datos en nube)");
+          return;
+        }
+        const data = snap.data();
+        const remoteState = data?.state;
+        const updatedAt = data?.updatedAt?.toMillis ? data.updatedAt.toMillis() : 0;
+
+        // Evitar bucles y aplicar solo si es realmente “más nuevo”
+        if (applyingRemote) return;
+        if (!remoteState) return;
+        if (updatedAt && updatedAt <= lastRemoteUpdatedMs) return;
+
+        applyingRemote = true;
+        lastRemoteUpdatedMs = updatedAt || Date.now();
+
+        // Aplica en tu app
+        applyRemoteState(remoteState);
+
+        applyingRemote = false;
+        setSync(true, "🔄 Sincronizado (último cambio recibido)");
+      }, (err) => {
+        setSync(false, "❌ Error sincronizando: " + (err?.message || err));
+      });
+
+      // 4) Escribir el estado local inicial (si no existe) o actualizar
+      await cloudSave(getLocalState());
+      setSync(true, "✅ Sincronización activa (tú y tu esposa verán lo mismo)");
+    }
+
+    const cloudSave = debounce(async (state) => {
+      if (!familyDocRef) return;
+      if (applyingRemote) return; // no re-subir lo que acabamos de recibir
+
+      try {
+        setSync(false, "☁️ Guardando en la nube...");
+        await setDoc(familyDocRef, {
+          familyId: familyDocRef.id,
+          state,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+        setSync(true, "✅ Guardado y sincronizado");
+      } catch (err) {
+        setSync(false, "❌ No se pudo guardar: " + (err?.message || err));
+      }
+    }, 600);
+
+    window.cloudInit = cloudInit;
+    window.cloudSave = cloudSave;
+
   } catch (err) {
     window.firebaseReady = false;
     setStatus(false, "❌ Error Firebase: " + (err?.message || err));
+    if (syncEl) syncEl.textContent = "❌ Sync desactivado";
   }
 </script>
 
