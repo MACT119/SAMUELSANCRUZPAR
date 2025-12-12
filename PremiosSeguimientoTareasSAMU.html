@@ -1109,6 +1109,22 @@ const firebaseConfig = {
     };
 
     // ------------------ UTILIDADES ------------------
+function applyRemoteState(remoteState) {
+  // Reemplaza tu estado local por el de la nube
+  state = remoteState;
+
+  // Guarda local como respaldo/offline
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+
+
+if (window.firebaseReady && typeof window.cloudSave === "function") {
+  window.cloudSave(state);
+}
+
+  // Re-render
+  render();
+}
+
     function createDefaultTasks() {
       return [
         { name: "Ordenar los juguetes", scores: [0, 0, 0, 0, 0, 0, 0] },
@@ -1735,11 +1751,19 @@ document.addEventListener("focusin", (e) => {
     }
 
     // ------------------ INICIO ------------------
-    document.addEventListener("DOMContentLoaded", () => {
-      loadState();
-      setupEvents();
-      render();
-    });
+    document.addEventListener("DOMContentLoaded", async () => {
+  loadState();
+  setupEvents();
+  render();
+
+  // 🔥 Iniciar sync Firebase (si está disponible)
+  if (window.firebaseReady && typeof window.cloudInit === "function") {
+    await window.cloudInit(
+      () => state,            // getLocalState
+      applyRemoteState        // applyRemoteState
+    );
+  }
+});
 
 
 
