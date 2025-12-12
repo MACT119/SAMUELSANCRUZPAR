@@ -909,6 +909,21 @@
 
 </div>
 
+
+
+<div id="firebaseStatus" style="
+  margin: 0.5rem 0;
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  background:#fef3c7;
+  color:#92400e;
+">
+  🔄 Conectando a Firebase...
+</div>
+
+
+
 <!-- Firebase SDKs -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -939,6 +954,10 @@
   // Hacemos accesibles estas variables al resto de la app
   window.firebaseApp = app;
   window.firestoreDB = db;
+
+
+// Indicador visual simple de conexión Firebase
+window.firebaseReady = true;
 </script>
 
   <script>
