@@ -940,15 +940,18 @@
   };
 
   try {
-    // ✅ PEGA AQUÍ TU firebaseConfig COMPLETO (no solo projectId)
-    const firebaseConfig = {
-      // apiKey: "...",
-      // authDomain: "...",
-      // projectId: "samutodo-699a3",
-      // storageBucket: "...",
-      // messagingSenderId: "...",
-      // appId: "..."
-    };
+    // ✅ PEGA AQUÍ TU firebaseConfig 
+
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyB1F_JD-nHLJLMLuwZtXxpEbIUUU1sSjo0",
+  authDomain: "samutodo-699a3.firebaseapp.com",
+  projectId: "samutodo-699a3",
+  storageBucket: "samutodo-699a3.firebasestorage.app",
+  messagingSenderId: "109672763360",
+  appId: "1:109672763360:web:73ad3777d2b3a5e028a585",
+  measurementId: "G-0FZKF3FKPN"
+};
 
     // Validación mínima para evitar “falsos conectados”
     const required = ["apiKey", "authDomain", "projectId", "appId"];
