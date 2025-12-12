@@ -925,40 +925,57 @@
 
 
 <!-- Firebase SDKs -->
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-  // 👇 PEGA AQUÍ TU firebaseConfig REAL
-  const firebaseConfig = {
-    projectId: "samutodo-699a3"
-    // el resto lo pegas tú
-     apiKey: "AIzaSyB1F_JD-nHLJLMLuwZtXxpEbIUUU1sSjo0",
-  authDomain: "samutodo-699a3.firebaseapp.com",
-  projectId: "samutodo-699a3",
-  storageBucket: "samutodo-699a3.firebasestorage.app",
-  messagingSenderId: "109672763360",
-  appId: "1:109672763360:web:73ad3777d2b3a5e028a585",
-  measurementId: "G-0FZKF3FKPN"
+  const statusEl = document.getElementById("firebaseStatus");
+  const setStatus = (ok, msg) => {
+    if (!statusEl) return;
+    statusEl.textContent = msg;
+    statusEl.style.background = ok ? "#dcfce7" : "#fee2e2";
+    statusEl.style.color = ok ? "#166534" : "#991b1b";
   };
 
-  // Inicializar Firebase
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  const auth = getAuth(app);
+  try {
+    // ✅ PEGA AQUÍ TU firebaseConfig COMPLETO (no solo projectId)
+    const firebaseConfig = {
+      // apiKey: "...",
+      // authDomain: "...",
+      // projectId: "samutodo-699a3",
+      // storageBucket: "...",
+      // messagingSenderId: "...",
+      // appId: "..."
+    };
 
-  // Login anónimo
-  signInAnonymously(auth).catch(console.error);
+    // Validación mínima para evitar “falsos conectados”
+    const required = ["apiKey", "authDomain", "projectId", "appId"];
+    const missing = required.filter(k => !firebaseConfig?.[k]);
+    if (missing.length) {
+      setStatus(false, "❌ Firebase config incompleto: falta " + missing.join(", "));
+      throw new Error("Firebase config incompleto");
+    }
 
-  // Hacemos accesibles estas variables al resto de la app
-  window.firebaseApp = app;
-  window.firestoreDB = db;
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
 
+    // Login anónimo (recomendado)
+    await signInAnonymously(auth);
 
-// Indicador visual simple de conexión Firebase
-window.firebaseReady = true;
+    window.firebaseApp = app;
+    window.firestoreDB = db;
+    window.firebaseReady = true;
+
+    setStatus(true, "☁️ Firebase conectado correctamente");
+  } catch (err) {
+    window.firebaseReady = false;
+    setStatus(false, "❌ Error Firebase: " + (err?.message || err));
+  }
 </script>
+
 
   <script>
     // ------------------ CONFIGURACIÓN ------------------
