@@ -954,7 +954,9 @@
     location.reload(true);
   });
 </script>
-  
+
+
+<!-- LOGICA FUERTE JAVASCRIPT-->
 <!-- Firebase SDKs -->
   <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -1116,6 +1118,8 @@
 
 
   <script>
+    let isApplyingRemote = false;
+
     // ------------------ CONFIGURACIÓN ------------------
     const DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
     const STORAGE_KEY = "tableroRetosHijo_deluxe_v3";
@@ -1142,6 +1146,8 @@
 //Aqui se realiza la logica de conexión y validación a la base de datos FireBase
     // ------------------ UTILIDADES ------------------
 function applyRemoteState(remoteState) {
+    isApplyingRemote = true;
+
   // ✅ 1) applyRemoteState CORREGIDO (sin cloudSave)
   state = remoteState;
   // Guarda local como respaldo/offline
@@ -1151,17 +1157,23 @@ function applyRemoteState(remoteState) {
     }
   // Re-render
   render();
+   // Liberamos la bandera después del render
+  setTimeout(() => {
+    isApplyingRemote = false;
+  }, 0);
 }
 // ✅ 2) saveState CORREGIDO (guarda local + nube)
-  function saveState() {
-    ensureRewards();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+ function saveState() {
+  ensureRewards();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 
-    // Guardar en la nube (si está listo)
-    if (window.firebaseReady && typeof window.cloudSave === "function") {
-      window.cloudSave(state);
-    }
+  // ❗ Si el cambio viene de Firestore, NO re-subir
+  if (isApplyingRemote) return;
+
+  if (window.firebaseReady && typeof window.cloudSave === "function") {
+    window.cloudSave(state);
   }
+}
     
     // ✅ 3) INICIO CORREGIDO: espera a cloudInit antes de llamarlo
   document.addEventListener("DOMContentLoaded", async () => {
@@ -1842,6 +1854,7 @@ emojiPanel.addEventListener("click", (e) => {
   </script>
 </body>
 </html>
+
 
 
 
