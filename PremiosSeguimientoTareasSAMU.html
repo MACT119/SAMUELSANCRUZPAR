@@ -934,7 +934,16 @@
   ☁️ Sincronización: iniciando...
 </div>
 
-
+<div id="familyDebug" style="
+  margin: 0.25rem 0 0.75rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  background:#f3f4f6;
+  color:#374151;
+">
+  👨‍👩‍👦 Familia: (sin configurar)
+</div>
 <footer id="buildInfo" style="text-align:center;font-size:0.75rem;">
   🧩 Build: <strong>b0ff42b</strong><br>
   <small>(toca para refrescar)</small>
@@ -1042,7 +1051,10 @@
         let familyCode = localStorage.getItem("familyCode");
         if (!familyCode) {
           familyCode = prompt("Código de familia (usa el mismo en el celular de tu esposa):") || "";
-          familyCode = familyCode.trim().toLowerCase();
+          familyCode = (familyCode || "")
+                        .trim()
+                        .toLowerCase()
+                        .replace(/\s+/g, " "); // colapsa espacios múltiples
           if (!familyCode) {
             setSync(false, "⚠️ Sincronización desactivada: no hay código de familia");
             return;
@@ -1052,6 +1064,9 @@
 
         const familyHash = await sha256Hex(familyCode);
         familyDocRef = doc(db, "families", familyHash);
+
+        const famEl = document.getElementById("familyDebug");
+        if (famEl) famEl.textContent = "👨‍👩‍👦 Familia ID: " + familyHash.slice(0, 12) + "…";
 
         setSync(false, "☁️ Sincronización: conectando a la familia...");
 
@@ -1796,8 +1811,8 @@ document.addEventListener("focusin", (e) => {
       });
 
       document.getElementById("changeFamilyCodeBtn")?.addEventListener("click", () => {
-  localStorage.removeItem("familyCode");
-  alert("Código borrado. Recarga la página para ingresar el nuevo código.");
+      localStorage.removeItem("familyCode");
+      alert("Código borrado. Recarga la página para ingresar el nuevo código.");
 });
 
     }
@@ -1827,6 +1842,7 @@ emojiPanel.addEventListener("click", (e) => {
   </script>
 </body>
 </html>
+
 
 
 
