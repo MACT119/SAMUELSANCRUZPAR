@@ -909,6 +909,7 @@
 
 </div>
 
+<button id="changeFamilyCodeBtn" class="secondary" type="button">🔑 Cambiar código familia</button>
 
 
 <div id="firebaseStatus" style="
@@ -1030,7 +1031,7 @@
         let familyCode = localStorage.getItem("familyCode");
         if (!familyCode) {
           familyCode = prompt("Código de familia (usa el mismo en el celular de tu esposa):") || "";
-          familyCode = familyCode.trim();
+          familyCode = familyCode.trim().toLowerCase();
           if (!familyCode) {
             setSync(false, "⚠️ Sincronización desactivada: no hay código de familia");
             return;
@@ -1808,6 +1809,7 @@ emojiPanel.addEventListener("click", (e) => {
   </script>
 </body>
 </html>
+
 
 
 
