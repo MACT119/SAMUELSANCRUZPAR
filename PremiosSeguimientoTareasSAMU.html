@@ -955,6 +955,31 @@
   });
 </script>
 
+  <div id="lastUpdateInfo" style="
+  margin: 0.25rem 0 0.75rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  background:#f3f4f6;
+  color:#374151;
+">
+  🕒 Último cambio: (aún no hay datos)
+</div>
+
+<div style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; margin-bottom:.75rem;">
+  <label style="font-size:.75rem; color:#6b7280;">📛 Nombre de este dispositivo:</label>
+  <input id="deviceNameInput" type="text" placeholder="Ej: Laptop Miguel" style="
+    flex: 1;
+    min-width: 220px;
+    padding: .35rem .5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: .8rem;
+  ">
+  <button id="saveDeviceNameBtn" type="button" class="secondary">Guardar</button>
+</div>
+
+
 
 <!-- LOGICA FUERTE JAVASCRIPT-->
 <!-- Firebase SDKs -->
@@ -1149,8 +1174,10 @@
   }
 </script>
 
+<!--FIN  Firebase SDKs -->
 
 
+  
 
   <script>
     let isApplyingRemote = false;
@@ -1868,6 +1895,27 @@ document.addEventListener("focusin", (e) => {
       alert("Código borrado. Recarga la página para ingresar el nuevo código.");
 });
 
+
+const DEVICE_NAME_KEY = "samu_device_name";
+
+function initDeviceNameUI() {
+  const input = document.getElementById("deviceNameInput");
+  const btn = document.getElementById("saveDeviceNameBtn");
+  if (!input || !btn) return;
+
+  input.value = localStorage.getItem(DEVICE_NAME_KEY) || "";
+
+  btn.addEventListener("click", () => {
+    const v = (input.value || "").trim();
+    localStorage.setItem(DEVICE_NAME_KEY, v);
+    alert("✅ Nombre del dispositivo guardado");
+  });
+}
+
+// llama esto en tu DOMContentLoaded después de render()
+
+
+      
     }
 
    
@@ -1895,6 +1943,7 @@ emojiPanel.addEventListener("click", (e) => {
   </script>
 </body>
 </html>
+
 
 
 
