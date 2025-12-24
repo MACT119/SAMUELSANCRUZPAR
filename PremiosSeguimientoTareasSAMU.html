@@ -966,21 +966,33 @@
   const statusEl = document.getElementById("firebaseStatus");
   const syncEl = document.getElementById("syncStatus");
 
-  const setStatus = (ok, msg) => {
+  const paint = (el, ok, msg) => {
+    if (!el) return;
+    el.textContent = msg;
+    el.style.background = ok ? "#dcfce7" : "#fee2e2";
+    el.style.color = ok ? "#166534" : "#991b1b";
+  };
+
+  const setStatusInfo = (msg) => {
     if (!statusEl) return;
     statusEl.textContent = msg;
-    statusEl.style.background = ok ? "#dcfce7" : "#fee2e2";
-    statusEl.style.color = ok ? "#166534" : "#991b1b";
+    statusEl.style.background = "#e0f2fe";
+    statusEl.style.color = "#075985";
   };
 
-  const setSync = (ok, msg) => {
+  const setSyncInfo = (msg) => {
     if (!syncEl) return;
     syncEl.textContent = msg;
-    syncEl.style.background = ok ? "#dcfce7" : "#e0f2fe";
-    syncEl.style.color = ok ? "#166534" : "#075985";
+    syncEl.style.background = "#e0f2fe";
+    syncEl.style.color = "#075985";
   };
 
-  // ✅ TU CONFIG REAL (tal cual lo pegaste)
+  // ✅ Define cloudInit temprano (para que NO exista el "no cargó a tiempo")
+  window.cloudInit = async () => {
+    throw new Error("Firebase aún no está listo. Recarga e intenta de nuevo.");
+  };
+  window.cloudSave = () => {};
+
   const firebaseConfig = {
     apiKey: "AIzaSyB1F_JD-nHLJLMLuwZtXxpEbIUUU1sSjo0",
     authDomain: "samutodo-699a3.firebaseapp.com",
@@ -992,8 +1004,8 @@
   };
 
   async function sha256Hex(input) {
-    const data = new TextEncoder().encode(input);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const dataBytes = new TextEncoder().encode(input);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", dataBytes);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
   }
@@ -1006,34 +1018,46 @@
     };
   }
 
-  try {
-    setStatus(false, "🔄 Conectando a Firebase...");
-    setSync(false, "☁️ Sincronización: iniciando...");
+  function withTimeout(promise, ms, label) {
+    return Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error(`Timeout (${label}) después de ${ms}ms`)), ms))
+    ]);
+  }
 
+  try {
+    setStatusInfo("🔄 Conectando a Firebase... (paso 1/5)");
+    setSyncInfo("☁️ Sincronización: iniciando...");
+
+    // Validación config
     const required = ["apiKey", "authDomain", "projectId", "appId"];
     const missing = required.filter(k => !firebaseConfig?.[k]);
-    if (missing.length) throw new Error("Firebase config incompleto: " + missing.join(", "));
+    if (missing.length) throw new Error("Firebase config incompleto: falta " + missing.join(", "));
 
+    setStatusInfo("🔄 Inicializando Firebase... (paso 2/5)");
     const app = initializeApp(firebaseConfig);
+
+    setStatusInfo("🔄 Preparando Firestore/Auth... (paso 3/5)");
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    await signInAnonymously(auth);
+    // clientId robusto
+    const CLIENT_ID_KEY = "samu_client_id";
+    let clientId = localStorage.getItem(CLIENT_ID_KEY);
+    if (!clientId) {
+      clientId = "cid_" + Date.now().toString(16) + "_" + Math.random().toString(16).slice(2);
+      localStorage.setItem(CLIENT_ID_KEY, clientId);
+    }
 
+    setStatusInfo("🔄 Autenticando (anónimo)... (paso 4/5)");
+    await withTimeout(signInAnonymously(auth), 12000, "signInAnonymously");
+
+    // Ya listo
     window.firebaseApp = app;
     window.firestoreDB = db;
     window.firebaseReady = true;
 
-    // Identificador único por dispositivo/navegador (persistente)
-    const CLIENT_ID_KEY = "samu_client_id";
-    let clientId = localStorage.getItem(CLIENT_ID_KEY);
-    if (!clientId) {
-      clientId = crypto.randomUUID ? crypto.randomUUID() : ("cid_" + Math.random().toString(16).slice(2));
-      localStorage.setItem(CLIENT_ID_KEY, clientId);
-}
-
-
-    setStatus(true, "☁️ Firebase conectado correctamente");
+    paint(statusEl, true, "☁️ Firebase conectado correctamente");
 
     // --- Sync ---
     let familyDocRef = null;
@@ -1045,18 +1069,17 @@
       if (applyingRemote) return;
 
       try {
-        setSync(false, "☁️ Guardando en la nube...");
+        setSyncInfo("☁️ Guardando en la nube...");
         await setDoc(familyDocRef, {
           familyId: familyDocRef.id,
           state,
           updatedAt: serverTimestamp(),
-          updatedByUid: auth.currentUser?.uid || null,
-          updatedByClientId: clientId
+          updatedByClientId: clientId,
+          updatedByUid: auth.currentUser?.uid || null
         }, { merge: true });
-
-        setSync(true, "✅ Guardado y sincronizado");
+        paint(syncEl, true, "✅ Guardado y sincronizado");
       } catch (err) {
-        setSync(false, "❌ No se pudo guardar: " + (err?.message || err));
+        paint(syncEl, false, "❌ No se pudo guardar: " + (err?.message || err));
       }
     }, 600);
 
@@ -1064,44 +1087,33 @@
       try {
         let familyCode = localStorage.getItem("familyCode");
         if (!familyCode) {
-          familyCode = prompt("Código de familia (usa el mismo en el celular de tu esposa):") || "";
-          familyCode = (familyCode || "")
-                        .trim()
-                        .toLowerCase()
-                        .replace(/\s+/g, " "); // colapsa espacios múltiples
-          if (!familyCode) {
-            setSync(false, "⚠️ Sincronización desactivada: no hay código de familia");
-            return;
-          }
-          localStorage.setItem("familyCode", familyCode);
+          familyCode = prompt("Código de familia (usa el mismo en todos los dispositivos):") || "";
         }
+
+        familyCode = (familyCode || "").trim().toLowerCase().replace(/\s+/g, " ");
+        if (!familyCode) {
+          paint(syncEl, false, "⚠️ Sync desactivado: no hay código de familia");
+          return;
+        }
+        localStorage.setItem("familyCode", familyCode);
 
         const familyHash = await sha256Hex(familyCode);
         familyDocRef = doc(db, "families", familyHash);
 
-        const famEl = document.getElementById("familyDebug");
-        if (famEl) famEl.textContent = "👨‍👩‍👦 Familia ID: " + familyHash.slice(0, 12) + "…";
-
-        setSync(false, "☁️ Sincronización: conectando a la familia...");
+        setSyncInfo("☁️ Sincronización: conectando a la familia...");
 
         onSnapshot(familyDocRef, (snap) => {
-          const snapData = snap.data();
-
-          const remoteState = data?.state;
-          // Si el cambio lo hizo este mismo cliente, no reapliques estado ni rerenderices
-          if (data?.updatedByClientId && data.updatedByClientId === clientId) {
-            return;
-          }
-          
           if (!snap.exists()) {
-            setSync(true, "✅ Sync activo (aún no hay datos en la nube)");
+            paint(syncEl, true, "✅ Sync activo (aún no hay datos en la nube)");
             return;
           }
 
           const snapData = snap.data();
+          const remoteState = snapData?.state;
+          const updatedAt = snapData?.updatedAt?.toMillis ? snapData.updatedAt.toMillis() : 0;
 
-          const remoteState = data?.state;
-          const updatedAt = data?.updatedAt?.toMillis ? data.updatedAt.toMillis() : 0;
+          // Ignorar eco del mismo cliente
+          if (snapData?.updatedByClientId && snapData.updatedByClientId === clientId) return;
 
           if (!remoteState) return;
           if (applyingRemote) return;
@@ -1113,28 +1125,30 @@
           applyRemoteState(remoteState);
 
           applyingRemote = false;
-          setSync(true, "🔄 Sync activo (cambios recibidos)");
+          paint(syncEl, true, "🔄 Sync activo (cambios recibidos)");
         }, (err) => {
-          setSync(false, "❌ Error sincronizando: " + (err?.message || err));
+          paint(syncEl, false, "❌ Error sincronizando: " + (err?.message || err));
         });
 
-        // Subir estado local inicial
         await cloudSave(getLocalState());
-        setSync(true, "✅ Sincronización activa (compartida)");
+        paint(syncEl, true, "✅ Sincronización activa (compartida)");
       } catch (err) {
-        setSync(false, "❌ Error iniciando sync: " + (err?.message || err));
+        paint(syncEl, false, "❌ Error iniciando sync: " + (err?.message || err));
       }
     }
 
     window.cloudInit = cloudInit;
     window.cloudSave = cloudSave;
 
+    setStatusInfo("✅ Firebase listo (paso 5/5). Sync disponible.");
+
   } catch (err) {
     window.firebaseReady = false;
-    setStatus(false, "❌ Error Firebase: " + (err?.message || err));
-    setSync(false, "❌ Sync desactivado");
+    paint(statusEl, false, "❌ Error Firebase: " + (err?.message || err));
+    paint(syncEl, false, "❌ Sync desactivado");
   }
 </script>
+
 
 
 
@@ -1199,30 +1213,20 @@ function applyRemoteState(remoteState) {
     
     // ✅ 3) INICIO CORREGIDO: espera a cloudInit antes de llamarlo
   document.addEventListener("DOMContentLoaded", async () => {
-    loadState();
-    setupEvents();
-    render();
+  loadState();
+  setupEvents();
+  render();
 
-    // Espera hasta 8s a que el script module exponga cloudInit
-    const start = Date.now();
-    while (typeof window.cloudInit !== "function" && (Date.now() - start) < 8000) {
-      await new Promise(r => setTimeout(r, 150));
+  try {
+    if (typeof window.cloudInit === "function") {
+      await window.cloudInit(() => state, applyRemoteState);
     }
+  } catch (e) {
+    const syncEl = document.getElementById("syncStatus");
+    if (syncEl) syncEl.textContent = "⚠️ Sync no disponible: " + (e?.message || e);
+  }
+});
 
-    if (window.firebaseReady && typeof window.cloudInit === "function") {
-      await window.cloudInit(
-        () => state,
-        applyRemoteState
-      );
-    } else {
-      const syncEl = document.getElementById("syncStatus");
-      if (syncEl) {
-        syncEl.textContent = "⚠️ Sync no disponible (cloudInit no cargó a tiempo)";
-        syncEl.style.background = "#fee2e2";
-        syncEl.style.color = "#991b1b";
-      }
-    }
-  });
 
     function createDefaultTasks() {
       return [
@@ -1876,6 +1880,7 @@ emojiPanel.addEventListener("click", (e) => {
   </script>
 </body>
 </html>
+
 
 
 
