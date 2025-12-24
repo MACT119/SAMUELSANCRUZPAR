@@ -1024,6 +1024,15 @@
     window.firestoreDB = db;
     window.firebaseReady = true;
 
+    // Identificador único por dispositivo/navegador (persistente)
+    const CLIENT_ID_KEY = "samu_client_id";
+    let clientId = localStorage.getItem(CLIENT_ID_KEY);
+    if (!clientId) {
+      clientId = crypto.randomUUID ? crypto.randomUUID() : ("cid_" + Math.random().toString(16).slice(2));
+      localStorage.setItem(CLIENT_ID_KEY, clientId);
+}
+
+
     setStatus(true, "☁️ Firebase conectado correctamente");
 
     // --- Sync ---
@@ -1040,8 +1049,11 @@
         await setDoc(familyDocRef, {
           familyId: familyDocRef.id,
           state,
-          updatedAt: serverTimestamp()
+          updatedAt: serverTimestamp(),
+          updatedByUid: auth.currentUser?.uid || null,
+          updatedByClientId: clientId
         }, { merge: true });
+
         setSync(true, "✅ Guardado y sincronizado");
       } catch (err) {
         setSync(false, "❌ No se pudo guardar: " + (err?.message || err));
@@ -1073,6 +1085,13 @@
         setSync(false, "☁️ Sincronización: conectando a la familia...");
 
         onSnapshot(familyDocRef, (snap) => {
+          const data = snap.data();
+          const remoteState = data?.state;
+          // Si el cambio lo hizo este mismo cliente, no reapliques estado ni rerenderices
+          if (data?.updatedByClientId && data.updatedByClientId === clientId) {
+            return;
+          }
+          
           if (!snap.exists()) {
             setSync(true, "✅ Sync activo (aún no hay datos en la nube)");
             return;
@@ -1146,22 +1165,23 @@
 //Aqui se realiza la logica de conexión y validación a la base de datos FireBase
     // ------------------ UTILIDADES ------------------
 function applyRemoteState(remoteState) {
-    isApplyingRemote = true;
+  try {
+    // Si el estado remoto es igual al local, no rerenderices
+    const localStr = JSON.stringify(state);
+    const remoteStr = JSON.stringify(remoteState);
+    if (localStr === remoteStr) return;
 
-  // ✅ 1) applyRemoteState CORREGIDO (sin cloudSave)
-  state = remoteState;
-  // Guarda local como respaldo/offline
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    if (window.firebaseReady && typeof window.cloudSave === "function") {
-      window.cloudSave(state);
-    }
-  // Re-render
-  render();
-   // Liberamos la bandera después del render
-  setTimeout(() => {
-    isApplyingRemote = false;
-  }, 0);
+    state = remoteState;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    render();
+  } catch (e) {
+    // si algo falla con stringify, igual aplica
+    state = remoteState;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    render();
+  }
 }
+
 // ✅ 2) saveState CORREGIDO (guarda local + nube)
  function saveState() {
   ensureRewards();
@@ -1854,6 +1874,7 @@ emojiPanel.addEventListener("click", (e) => {
   </script>
 </body>
 </html>
+
 
 
 
