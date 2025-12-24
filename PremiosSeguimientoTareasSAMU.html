@@ -988,8 +988,8 @@
   };
 
   // ✅ Define cloudInit temprano (para que NO exista el "no cargó a tiempo")
-  window.cloudInit = async () => {
-    throw new Error("Firebase aún no está listo. Recarga e intenta de nuevo.");
+  //window.cloudInit = async () => {
+    //throw new Error("Firebase aún no está listo. Recarga e intenta de nuevo.");
   };
   window.cloudSave = () => {};
 
@@ -1880,6 +1880,7 @@ emojiPanel.addEventListener("click", (e) => {
   </script>
 </body>
 </html>
+
 
 
 
