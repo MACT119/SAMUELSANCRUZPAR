@@ -1217,15 +1217,30 @@ function applyRemoteState(remoteState) {
   setupEvents();
   render();
 
-  try {
-    if (typeof window.cloudInit === "function") {
-      await window.cloudInit(() => state, applyRemoteState);
-    }
-  } catch (e) {
+  // ⏳ Esperar explícitamente a que Firebase esté listo
+  const start = Date.now();
+  while (!window.firebaseReady && (Date.now() - start) < 20000) {
     const syncEl = document.getElementById("syncStatus");
-    if (syncEl) syncEl.textContent = "⚠️ Sync no disponible: " + (e?.message || e);
+    if (syncEl) syncEl.textContent = "☁️ Sincronización: esperando Firebase...";
+    await new Promise(r => setTimeout(r, 200));
+  }
+
+  // ✅ AHORA sí es seguro llamar cloudInit
+  if (window.firebaseReady && typeof window.cloudInit === "function") {
+    await window.cloudInit(
+      () => state,
+      applyRemoteState
+    );
+  } else {
+    const syncEl = document.getElementById("syncStatus");
+    if (syncEl) {
+      syncEl.textContent = "❌ No se pudo iniciar sincronización (Firebase no listo)";
+      syncEl.style.background = "#fee2e2";
+      syncEl.style.color = "#991b1b";
+    }
   }
 });
+
 
 
     function createDefaultTasks() {
@@ -1880,6 +1895,7 @@ emojiPanel.addEventListener("click", (e) => {
   </script>
 </body>
 </html>
+
 
 
 
