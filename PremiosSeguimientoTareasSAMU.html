@@ -1073,6 +1073,8 @@
       clientId = "cid_" + Date.now().toString(16) + "_" + Math.random().toString(16).slice(2);
       localStorage.setItem(CLIENT_ID_KEY, clientId);
     }
+    const DEVICE_NAME_KEY = "samu_device_name";
+    const getDeviceName = () => localStorage.getItem(DEVICE_NAME_KEY) || "";
 
     setStatusInfo("🔄 Autenticando (anónimo)... (paso 4/5)");
     await withTimeout(signInAnonymously(auth), 12000, "signInAnonymously");
@@ -1090,18 +1092,19 @@
     let lastRemoteUpdatedMs = 0;
 
     const cloudSave = debounce(async (state) => {
-      if (!familyDocRef) return;
+      if (!familyDocRef) r  eturn;
       if (applyingRemote) return;
 
       try {
         setSyncInfo("☁️ Guardando en la nube...");
         await setDoc(familyDocRef, {
-          familyId: familyDocRef.id,
-          state,
-          updatedAt: serverTimestamp(),
-          updatedByClientId: clientId,
-          updatedByUid: auth.currentUser?.uid || null
-        }, { merge: true });
+  familyId: familyDocRef.id,
+  state,
+  updatedAt: serverTimestamp(),
+  updatedByClientId: clientId,
+  updatedByUid: auth.currentUser?.uid || null,
+  updatedByDeviceName: getDeviceName()
+}, { merge: true });
         paint(syncEl, true, "✅ Guardado y sincronizado");
       } catch (err) {
         paint(syncEl, false, "❌ No se pudo guardar: " + (err?.message || err));
@@ -1243,6 +1246,8 @@ function applyRemoteState(remoteState) {
   loadState();
   setupEvents();
   render();
+  initDeviceNameUI();
+
 
   // ⏳ Esperar explícitamente a que Firebase esté listo
   const start = Date.now();
@@ -1943,6 +1948,7 @@ emojiPanel.addEventListener("click", (e) => {
   </script>
 </body>
 </html>
+
 
 
 
