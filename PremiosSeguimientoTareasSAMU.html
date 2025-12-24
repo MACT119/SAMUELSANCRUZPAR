@@ -1140,6 +1140,19 @@
           const remoteState = snapData?.state;
           const updatedAt = snapData?.updatedAt?.toMillis ? snapData.updatedAt.toMillis() : 0;
 
+          const lastEl = document.getElementById("lastUpdateInfo");
+          if (lastEl) {
+            const dev = snapData?.updatedByDeviceName || "Dispositivo sin nombre";
+            const when = snapData?.updatedAt?.toDate ? snapData.updatedAt.toDate() : null;
+            const ageSec = when ? Math.max(0, Math.round((Date.now() - when.getTime()) / 1000)) : null;
+          
+            lastEl.textContent = ageSec != null
+              ? `🕒 Último cambio: ${dev} · hace ${ageSec}s`
+              : `🕒 Último cambio: ${dev}`;
+          }
+
+
+          
           // Ignorar eco del mismo cliente
           if (snapData?.updatedByClientId && snapData.updatedByClientId === clientId) return;
 
@@ -1948,6 +1961,7 @@ emojiPanel.addEventListener("click", (e) => {
   </script>
 </body>
 </html>
+
 
 
 
