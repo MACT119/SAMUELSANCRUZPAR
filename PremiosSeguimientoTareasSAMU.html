@@ -1085,7 +1085,8 @@
         setSync(false, "☁️ Sincronización: conectando a la familia...");
 
         onSnapshot(familyDocRef, (snap) => {
-          const data = snap.data();
+          const snapData = snap.data();
+
           const remoteState = data?.state;
           // Si el cambio lo hizo este mismo cliente, no reapliques estado ni rerenderices
           if (data?.updatedByClientId && data.updatedByClientId === clientId) {
@@ -1097,7 +1098,8 @@
             return;
           }
 
-          const data = snap.data();
+          const snapData = snap.data();
+
           const remoteState = data?.state;
           const updatedAt = data?.updatedAt?.toMillis ? data.updatedAt.toMillis() : 0;
 
@@ -1874,6 +1876,7 @@ emojiPanel.addEventListener("click", (e) => {
   </script>
 </body>
 </html>
+
 
 
 
